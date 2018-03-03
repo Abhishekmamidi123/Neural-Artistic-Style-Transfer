@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[13]:
+# In[124]:
 
 
 # README
@@ -26,78 +26,28 @@
 # Total cost function: 
 # J_total = alpha*J_content + beta*J_style
 
-# J_content:
-# 
 
-# J_style:
-# 
-
-# VGG 19 model is taken from the paper: "Very Deep Convolutional Networks for Large-Scale Image Recognition"
-# VGG 19 has 43 layers
-# 0 is conv1_1 (3, 3, 3, 64)
-# 1 is relu
-# 2 is conv1_2 (3, 3, 64, 64)
-# 3 is relu    
-# 4 is avgpool
-# 5 is conv2_1 (3, 3, 64, 128)
-# 6 is relu
-# 7 is conv2_2 (3, 3, 128, 128)
-# 8 is relu
-# 9 is avgpool
-# 10 is conv3_1 (3, 3, 128, 256)
-# 11 is relu
-# 12 is conv3_2 (3, 3, 256, 256)
-# 13 is relu
-# 14 is conv3_3 (3, 3, 256, 256)
-# 15 is relu
-# 16 is conv3_4 (3, 3, 256, 256)
-# 17 is relu
-# 18 is avgpool
-# 19 is conv4_1 (3, 3, 256, 512)
-# 20 is relu
-# 21 is conv4_2 (3, 3, 512, 512)
-# 22 is relu
-# 23 is conv4_3 (3, 3, 512, 512)
-# 24 is relu
-# 25 is conv4_4 (3, 3, 512, 512)
-# 26 is relu
-# 27 is avgpool
-# 28 is conv5_1 (3, 3, 512, 512)
-# 29 is relu
-# 30 is conv5_2 (3, 3, 512, 512)
-# 31 is relu
-# 32 is conv5_3 (3, 3, 512, 512)
-# 33 is relu
-# 34 is conv5_4 (3, 3, 512, 512)
-# 35 is relu
-# 36 is avgpool
-# 37 is fullyconnected (7, 7, 512, 4096)
-# 38 is relu
-# 39 is fullyconnected (1, 1, 4096, 4096)
-# 40 is relu
-# 41 is fullyconnected (1, 1, 4096, 1000)
-# 42 is softmax
-
-
-# In[27]:
+# In[125]:
 
 
 # Import modules
 
-import numpy as np
 import scipy
+import numpy as np
+import tensorflow as tf
 from scipy import io as sio
 from scipy import ndimage, misc
-import tensorflow as tf
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import imshow
 import warnings
 warnings.filterwarnings('ignore') # Ignores warnings.
 
 
-# In[28]:
+# In[126]:
 
 
 # Reading VGG19 weights and converting each layer into tensors and storing them in a dictionary.
+# Paper: Very deep convolutional networks for large-scale image recognition: https://arxiv.org/pdf/1409.1556.pdf  
 
 path_vgg19_weights = '../pretrained_models/imagenet-vgg-verydeep-19.mat'
 vgg_model = sio.loadmat(path_vgg19_weights)
@@ -146,14 +96,58 @@ model['conv5_4'] = tf.nn.relu(conv2d(model['conv5_3'], 34))
 model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
 
 
-# In[63]:
+# In[127]:
 
 
-# 
-image_filepath = 'images/butterfly.jpg'
-image = ndimage.imread(image_filepath, mode="RGB")
-image_resized = np.array([misc.imresize(image, (300, 400))])
-model["input_image"].assign(image_resized)
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
-# sess.run(model["conv4_2"])
+# Read content and style images
+content_image = scipy.misc.imread("images/louvre.jpg")
+content_image = np.array([misc.imresize(content_image, (300, 400))])
+imshow(content_image[0])
+print "Content Image:"
+plt.show()
+
+style_image = scipy.misc.imread("images/monet_800600.jpg")
+style_image = np.array([misc.imresize(style_image, (300, 400))])
+imshow(style_image[0])
+print "Style Image:"
+plt.show()
+
+
+# In[128]:
+
+
+# Generate a noisy random image - Generated image
+noise_image = np.random.uniform(-20, 20, size=(1, image_height, image_width, channels)) 
+generated_image = noise_image * 0.6 + content_image * (1 - 0.6)
+imshow(generated_image[0])
+print "Noise Image:"
+plt.show()
+
+
+# In[146]:
+
+
+# J_content: Cost between content image and generated image.
+
+# tf.reset_default_graph()
+sess = tf.InteractiveSession()
+# sess.run(tf.global_variables_initializer())
+
+# Activations of content image in layer 'conv4_2' - constant
+sess.run(model["input_image"].assign(content_image))
+content_activation = sess.run(model['conv4_2'])
+shape = content_activation.shape
+print shape
+
+# Activations of generated image in layer 'conv4_2' - variable
+generated_activation = model['conv4_2']
+print generated_activation.shape
+
+# Compute content cost: J_content
+height = shape[1]
+width = shape[2]
+channels = shape[3]
+
+J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activation)))
+J_content = J_content/(4*height*width*channels)
+
