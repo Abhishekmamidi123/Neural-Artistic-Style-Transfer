@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[124]:
+# In[5]:
 
 
 # README
@@ -27,7 +27,7 @@
 # J_total = alpha*J_content + beta*J_style
 
 
-# In[125]:
+# In[6]:
 
 
 # Import modules
@@ -43,7 +43,7 @@ import warnings
 warnings.filterwarnings('ignore') # Ignores warnings.
 
 
-# In[126]:
+# In[7]:
 
 
 # Reading VGG19 weights and converting each layer into tensors and storing them in a dictionary.
@@ -96,7 +96,7 @@ model['conv5_4'] = tf.nn.relu(conv2d(model['conv5_3'], 34))
 model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
 
 
-# In[127]:
+# In[8]:
 
 
 # Read content and style images
@@ -113,7 +113,7 @@ print "Style Image:"
 plt.show()
 
 
-# In[128]:
+# In[9]:
 
 
 # Generate a noisy random image - Generated image
@@ -124,30 +124,79 @@ print "Noise Image:"
 plt.show()
 
 
-# In[146]:
+# In[13]:
 
 
 # J_content: Cost between content image and generated image.
 
-# tf.reset_default_graph()
+def compute_J_content(layer_name):
+    # Activations of content image in layer 'conv4_2' - constant
+    content_activation = sess.run(model[layer_name])
+    shape = content_activation.shape
+    
+    # Activations of generated image in layer 'conv4_2' - variable
+    generated_activation = model[layer_name]
+
+    # Compute content cost: J_content
+    height = shape[1]
+    width = shape[2]
+    channels = shape[3]
+
+    J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activation)))
+    J_content = J_content/2.0
+    print 'Computed content cost.'
+    return J_content
+    
 sess = tf.InteractiveSession()
-# sess.run(tf.global_variables_initializer())
-
-# Activations of content image in layer 'conv4_2' - constant
 sess.run(model["input_image"].assign(content_image))
-content_activation = sess.run(model['conv4_2'])
-shape = content_activation.shape
-print shape
+J_content = compute_J_content('conv4_2')
 
-# Activations of generated image in layer 'conv4_2' - variable
-generated_activation = model['conv4_2']
-print generated_activation.shape
 
-# Compute content cost: J_content
-height = shape[1]
-width = shape[2]
-channels = shape[3]
+# In[23]:
 
-J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activation)))
-J_content = J_content/(4*height*width*channels)
+
+def compute_J_style(model, layers):
+    
+    J_style = 0
+    
+    for layer in layers:
+        # Activations of style image in some layer
+        style_activation = sess.run(model[layer])
+        shape = style_activation.shape
+        
+        height = shape[1]
+        width = shape[2]
+        channels = shape[3]
+
+        # Reshape style_activations
+        print style_activation.shape
+        style_activation = tf.reshape(style_activation, [height*width, channels])
+        print style_activation.shape
+        
+        # Compute Gram matrix for style_activation
+        style_gram_matrix = tf.matmul(tf.transpose(style_activation), style_activation)
+        print style_gram_matrix.shape
+        
+        # Activations of generated image
+        generated_activation = model[layer]
+        
+        # Reshape generated_activations
+        generated_activation = tf.reshape(generated_activation, [height*width, channels])
+        
+        # Compute Gram matrix for generated_activation
+        generated_gram_matrix = tf.matmul(tf.transpose(style_activation), style_activation)
+        print generated_gram_matrix.shape
+        
+        M = height*width
+        N = channels
+        
+        # Compute J_style for this layer and add.
+        J_style_for_this_layer = (1/(4.0*(N**2)*(M**2))) * tf.reduce_sum(tf.square(tf.subtract(style_activation, generated_activation))) 
+        J_style += (1.0/len(layers)) * J_style_for_this_layer
+        
+        return J_style
+        
+sess.run(model["input_image"].assign(content_image))
+layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1']
+J_style = compute_J_style(model, layers)
 
