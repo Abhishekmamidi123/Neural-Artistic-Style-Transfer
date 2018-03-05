@@ -124,7 +124,7 @@ print "Noise Image:"
 plt.show()
 
 
-# In[13]:
+# In[28]:
 
 
 # J_content: Cost between content image and generated image.
@@ -150,9 +150,10 @@ def compute_J_content(layer_name):
 sess = tf.InteractiveSession()
 sess.run(model["input_image"].assign(content_image))
 J_content = compute_J_content('conv4_2')
+print J_content
 
 
-# In[23]:
+# In[30]:
 
 
 def compute_J_style(model, layers):
@@ -199,4 +200,20 @@ def compute_J_style(model, layers):
 sess.run(model["input_image"].assign(content_image))
 layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1']
 J_style = compute_J_style(model, layers)
+print J_style
+
+
+# In[35]:
+
+
+def compute_J_total(alpha, J_content, beta, J_style):
+    J_total = alpha*J_content + beta*J_style
+    return J_total
+
+# alpha/beta = 0.001 or 0.0001
+alpha = 10
+beta = 40
+J_total = compute_J_total(alpha, J_content, beta, J_style)
+print J_content.shape
+print J_style.shape
 
