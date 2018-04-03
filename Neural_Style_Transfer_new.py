@@ -53,7 +53,7 @@ model['conv5_2'] = tf.nn.relu(conv2d(model['conv5_1'], 30))
 model['conv5_3'] = tf.nn.relu(conv2d(model['conv5_2'], 32))
 model['conv5_4'] = tf.nn.relu(conv2d(model['conv5_3'], 34))
 model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
-
+print model
 
 # Read content and style images
 content_image = scipy.misc.imread("images/louvre.jpg")
@@ -68,15 +68,67 @@ imshow(style_image[0])
 print "Style Image:"
 plt.show()
 
+# Generate a noisy random image - Generated image
+noise_image = np.random.uniform(-20, 20, size=(1, image_height, image_width, channels)) #again y??
+generated_image = noise_image * 0.6 + content_image * (1 - 0.6) ##again y??
+imshow(generated_image[0])
+print "Noise Image:"
+plt.show()
+
 sess = tf.Session()
+
+# Generated image
+sess.run(model['input_image'].assign(generated_image))
+layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1', 'conv4_2']
+generated_activations = []
+for layer in layers:
+	generated_activations.append(model[layer])
 
 # Content image
 sess.run(model['input_image'].assign(content_image))
-content_image_activations = sess.run(model['conv4_2'])
+content_activations = sess.run(model['conv4_2'])
 
 # Style image
 sess.run(model['input_image'].assign(style_image))
-style_image_activations = sess.run(model['conv4_2'])
+style_activations = []
+for layer in layers:
+	style_activations(sess.run(model[layer]))
+	 
+# Content cost
+J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activations[-1])))
+J_content = J_content/2.0
 
-# Generated image
+# Style cost
+J_style = 0
+for layer in layers[:-1]:
+	shape = style_activation.shape
+	height = shape[1]
+	width = shape[2]
+	channels = shape[3]
+    
+    # Reshape style_activations
+	print style_activation.shape
+	style_activation = tf.reshape(style_activation, [height*width, channels])
+	print style_activation.shape
+	
+	# Compute Gram matrix for style_activation
+	style_gram_matrix = tf.matmul(tf.transpose(style_activation), style_activation)
+	print style_gram_matrix.shape
+	
+	# Activations of generated image
+	generated_activation = model[layer]
+	
+	# Reshape generated_activations
+	generated_activation = tf.reshape(generated_activation, [height*width, channels])
+	
+	# Compute Gram matrix for generated_activation
+	generated_gram_matrix = tf.matmul(tf.transpose(style_activation), style_activation)
+	print generated_gram_matrix.shape
+	
+	M = height*width
+	N = channels
+	
+	# Compute J_style for this layer and add.
+	J_style_for_this_layer = (1/(4.0*(N**2)*(M**2))) * tf.reduce_sum(tf.square(tf.subtract(style_activation, generated_activation))) 
+	J_style += (1.0/len(layers)) * J_style_for_this_layer
 
