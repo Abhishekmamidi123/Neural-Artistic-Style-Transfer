@@ -86,49 +86,55 @@ for layer in layers:
 
 # Content image
 sess.run(model['input_image'].assign(content_image))
-content_activations = sess.run(model['conv4_2'])
+content_activation = sess.run(model['conv4_2'])
 
 # Style image
 sess.run(model['input_image'].assign(style_image))
 style_activations = []
 for layer in layers:
-	style_activations(sess.run(model[layer]))
+	style_activations.append(sess.run(model[layer]))
 	 
 # Content cost
 J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activations[-1])))
 J_content = J_content/2.0
+print J_content
 
 # Style cost
 J_style = 0
+count = 0
 for layer in layers[:-1]:
+	style_activation = style_activations[count]
 	shape = style_activation.shape
 	height = shape[1]
 	width = shape[2]
 	channels = shape[3]
     
     # Reshape style_activations
-	print style_activation.shape
 	style_activation = tf.reshape(style_activation, [height*width, channels])
-	print style_activation.shape
 	
 	# Compute Gram matrix for style_activation
 	style_gram_matrix = tf.matmul(tf.transpose(style_activation), style_activation)
-	print style_gram_matrix.shape
 	
 	# Activations of generated image
-	generated_activation = model[layer]
+	generated_activation = generated_activations[count]
 	
 	# Reshape generated_activations
 	generated_activation = tf.reshape(generated_activation, [height*width, channels])
 	
 	# Compute Gram matrix for generated_activation
-	generated_gram_matrix = tf.matmul(tf.transpose(style_activation), style_activation)
-	print generated_gram_matrix.shape
+	generated_gram_matrix = tf.matmul(tf.transpose(generated_activation), generated_activation)
 	
 	M = height*width
 	N = channels
 	
 	# Compute J_style for this layer and add.
-	J_style_for_this_layer = (1/(4.0*(N**2)*(M**2))) * tf.reduce_sum(tf.square(tf.subtract(style_activation, generated_activation))) 
+	J_style_for_this_layer = (1/(4.0*(N**2)*(M**2))) * tf.reduce_sum(tf.square(tf.subtract(style_gram_matrix, generated_gram_matrix))) 
 	J_style += (1.0/len(layers)) * J_style_for_this_layer
+	count = count + 1
+print J_style.shape
+
+# J_total
+alpha = 10
+beta = 40
+J_total = alpha*J_content + beta*J_style
 
