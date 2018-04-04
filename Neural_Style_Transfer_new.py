@@ -138,3 +138,15 @@ alpha = 10
 beta = 40
 J_total = alpha*J_content + beta*J_style
 
+# Train - Reduce cost and update Generated image.
+learning_rate = 0.01
+optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(J_total)
+init = tf.global_variables_initializer()
+sess.run(init)
+
+training_epochs = 100
+for epoch in range(training_epochs):
+	_, c = sess.run([optimizer, J_total])
+	if (epoch) % 10 == 0:
+		print("Epoch:", '%04d' % (epoch), "cost=", "{:.9f}".format(c))
+
