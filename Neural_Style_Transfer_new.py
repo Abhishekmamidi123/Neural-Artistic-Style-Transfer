@@ -57,7 +57,7 @@ model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides 
 print model
 
 # Read content and style images
-content_image = scipy.misc.imread("images/louvre.jpg")
+content_image = scipy.misc.imread("content.jpg")
 content_image = np.array([misc.imresize(content_image, (300, 400))])
 imshow(content_image[0])
 print "Content Image:"
@@ -70,8 +70,8 @@ print "Style Image:"
 plt.show()
 
 # Generate a noisy random image - Generated image
-noise_image = np.random.uniform(-20, 20, size=(1, image_height, image_width, channels)) #again y??
-generated_image = noise_image * 0.6 + content_image * (1 - 0.6) ##again y??
+noise_image = np.random.uniform(-20, 20, size=(1, image_height, image_width, channels))
+generated_image = noise_image * 0.6 + content_image * (1 - 0.6)
 imshow(generated_image[0])
 print "Noise Image:"
 plt.show()
@@ -92,14 +92,18 @@ content_activation = sess.run(model['conv4_2'])
 
 # Style image
 sess.run(model['input_image'].assign(style_image))
+layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1', 'conv4_2']
 style_activations = []
 for layer in layers:
 	style_activations.append(sess.run(model[layer]))
-	 
+
 # Content cost
+print content_activation
+print generated_activations[-1]
+imsave('x.png', generated_activations[0])
 J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activations[-1])))
 J_content = J_content/2.0
-print J_content
+print sess.run(J_content)
 
 # Style cost
 J_style = 0
@@ -145,14 +149,12 @@ learning_rate = 0.01
 optimizer = tf.train.AdamOptimizer(learning_rate).minimize(J_total)
 init = tf.global_variables_initializer()
 sess.run(init)
-
 imshow(generated_image[0])
 imsave('output_'+str(0)+'.png', generated_image[0])
 training_epochs = 3
-for epoch in range(training_epochs):
-	_, c = sess.run([optimizer, J_total])
-	if (epoch) % 10 == 0:
-		print("Epoch:", '%04d' % (epoch), "cost=", "{:.9f}".format(c))
-		imsave('output_'+str(epoch)+'.png', generated_image[0])
-		
+# for epoch in range(training_epochs):
+#	_, c = sess.run([optimizer, J_total])
+#	if (epoch) % 10 == 0:
+#		print("Epoch:", '%04d' % (epoch), "cost=", "{:.9f}".format(c))
+#		imsave('output_'+str(epoch)+'.png', generated_image[0])
 # writer.close()
