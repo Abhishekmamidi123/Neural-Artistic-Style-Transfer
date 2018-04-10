@@ -57,13 +57,13 @@ model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides 
 print model
 
 # Read content and style images
-content_image = scipy.misc.imread("content.jpg")
+content_image = scipy.misc.imread("images/content.jpg")
 content_image = np.array([misc.imresize(content_image, (300, 400))])
 imshow(content_image[0])
 print "Content Image:"
 plt.show()
 
-style_image = scipy.misc.imread("images/monet_800600.jpg")
+style_image = scipy.misc.imread("images/style.jpg")
 style_image = np.array([misc.imresize(style_image, (300, 400))])
 imshow(style_image[0])
 print "Style Image:"
