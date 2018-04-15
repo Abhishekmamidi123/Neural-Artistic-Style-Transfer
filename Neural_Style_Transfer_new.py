@@ -54,30 +54,29 @@ model['conv5_2'] = tf.nn.relu(conv2d(model['conv5_1'], 30))
 model['conv5_3'] = tf.nn.relu(conv2d(model['conv5_2'], 32))
 model['conv5_4'] = tf.nn.relu(conv2d(model['conv5_3'], 34))
 model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
-print model
+# print model
 
 # Read content and style images
 content_image = scipy.misc.imread("images/content.jpg")
 content_image = np.array([misc.imresize(content_image, (300, 400))])
 imshow(content_image[0])
 print "Content Image:"
-plt.show()
+# plt.show()
 
 style_image = scipy.misc.imread("images/style.jpg")
 style_image = np.array([misc.imresize(style_image, (300, 400))])
 imshow(style_image[0])
 print "Style Image:"
-plt.show()
+# plt.show()
 
 # Generate a noisy random image - Generated image
 noise_image = np.random.uniform(-20, 20, size=(1, image_height, image_width, channels))
 generated_image = noise_image * 0.6 + content_image * (1 - 0.6)
 imshow(generated_image[0])
 print "Noise Image:"
-plt.show()
+# plt.show()
 
 sess = tf.Session()
-# writer = tf.summary.FileWriter('logs', sess.graph)
 
 # Generated image
 sess.run(model['input_image'].assign(generated_image))
@@ -98,12 +97,8 @@ for layer in layers:
 	style_activations.append(sess.run(model[layer]))
 
 # Content cost
-print content_activation
-print generated_activations[-1]
-imsave('x.png', generated_activations[0])
 J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activations[-1])))
 J_content = J_content/2.0
-print sess.run(J_content)
 
 # Style cost
 J_style = 0
@@ -114,8 +109,8 @@ for layer in layers[:-1]:
 	height = shape[1]
 	width = shape[2]
 	channels = shape[3]
-    
-    # Reshape style_activations
+	
+	# Reshape style_activations
 	style_activation = tf.reshape(style_activation, [height*width, channels])
 	
 	# Compute Gram matrix for style_activation
@@ -132,16 +127,14 @@ for layer in layers[:-1]:
 	
 	M = height*width
 	N = channels
-	
 	# Compute J_style for this layer and add.
 	J_style_for_this_layer = (1/(4.0*(N**2)*(M**2))) * tf.reduce_sum(tf.square(tf.subtract(style_gram_matrix, generated_gram_matrix))) 
 	J_style += (1.0/len(layers)) * J_style_for_this_layer
 	count = count + 1
-print J_style.shape
 
 # J_total
-alpha = 10
-beta = 40
+alpha = 0.1
+beta = 100
 J_total = alpha*J_content + beta*J_style
 
 # Train - Reduce cost and update Generated image.
@@ -150,11 +143,12 @@ optimizer = tf.train.AdamOptimizer(learning_rate).minimize(J_total)
 init = tf.global_variables_initializer()
 sess.run(init)
 imshow(generated_image[0])
-imsave('output_'+str(0)+'.png', generated_image[0])
-training_epochs = 3
-# for epoch in range(training_epochs):
-#	_, c = sess.run([optimizer, J_total])
-#	if (epoch) % 10 == 0:
-#		print("Epoch:", '%04d' % (epoch), "cost=", "{:.9f}".format(c))
-#		imsave('output_'+str(epoch)+'.png', generated_image[0])
-# writer.close()
+print model['input_image']
+imsave('output_images/output_'+str(0)+'.png', generated_image[0])
+training_epochs = 500
+for epoch in range(training_epochs):
+	_, c = sess.run([optimizer, J_total])
+	# if (epoch) % 10 == 0:
+	print("Epoch:", '%04d' % (epoch), "cost=", "{:.9f}".format(c))
+	# imsave('output_images/output_'+str(epoch)+'.png', generated_image[0])
+	imsave('output_images_1/1_output_'+str(epoch)+'.png', sess.run(model['input_image'])[0])

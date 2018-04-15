@@ -56,4 +56,3 @@ model['conv5_3'] = tf.nn.relu(conv2d(model['conv5_2'], 32))
 model['conv5_4'] = tf.nn.relu(conv2d(model['conv5_3'], 34))
 model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
 print model
-
