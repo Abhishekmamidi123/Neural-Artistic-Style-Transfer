@@ -78,13 +78,6 @@ print "Noise Image:"
 
 sess = tf.Session()
 
-# Generated image
-sess.run(model['input_image'].assign(generated_image))
-layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1', 'conv4_2']
-generated_activations = []
-for layer in layers:
-	generated_activations.append(model[layer])
-
 # Content image
 sess.run(model['input_image'].assign(content_image))
 content_activation = sess.run(model['conv4_2'])
@@ -92,9 +85,17 @@ content_activation = sess.run(model['conv4_2'])
 # Style image
 sess.run(model['input_image'].assign(style_image))
 layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1', 'conv4_2']
+weights = [0.5, 1.0, 1.5, 3.0, 4.0]
 style_activations = []
 for layer in layers:
 	style_activations.append(sess.run(model[layer]))
+
+# Generated image
+sess.run(model['input_image'].assign(generated_image))
+layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1', 'conv4_2']
+generated_activations = []
+for layer in layers:
+	generated_activations.append(model[layer])
 
 # Content cost
 J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activations[-1])))
@@ -129,7 +130,8 @@ for layer in layers[:-1]:
 	N = channels
 	# Compute J_style for this layer and add.
 	J_style_for_this_layer = (1/(4.0*(N**2)*(M**2))) * tf.reduce_sum(tf.square(tf.subtract(style_gram_matrix, generated_gram_matrix))) 
-	J_style += (1.0/len(layers)) * J_style_for_this_layer
+	# J_style += (1.0/len(layers)) * J_style_for_this_layer
+	J_style += (weights[count]) * J_style_for_this_layer
 	count = count + 1
 
 # J_total
@@ -143,7 +145,7 @@ optimizer = tf.train.AdamOptimizer(learning_rate)
 train_step = optimizer.minimize(J_total)
 init = tf.global_variables_initializer()
 sess.run(init)
-sess.run(model['input_image'].assign(generated_image))
+# sess.run(model['input_image'].assign(generated_image))
 # imshow(generated_image[0])
 print model['input_image']
 imsave('../output_images/output_'+str(0)+'.png', generated_image[0])
@@ -152,5 +154,5 @@ for epoch in range(training_epochs):
 	# _, c = sess.run([optimizer, J_total])
 	# if (epoch) % 10 == 0:
 	sess.run(train_step)
-	print("Epoch:", '%04d' % (epoch), "cost=", "{:.9f}".format(c))
+	print("Epoch:", '%04d' % (epoch), "cost=", (sess.run(J_total)))
 	imsave('../output_images/1_output_'+str(epoch)+'.png', sess.run(model['input_image'])[0])
