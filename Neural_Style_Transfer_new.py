@@ -9,7 +9,7 @@ from scipy.misc import imsave
 import warnings
 warnings.filterwarnings('ignore') # Ignores warnings.
 
-path_vgg19_weights = '../imagenet-vgg-verydeep-19.mat'
+path_vgg19_weights = '../pretrained_models/imagenet-vgg-verydeep-19.mat'
 vgg_model = sio.loadmat(path_vgg19_weights)
 vgg_layers = vgg_model['layers']
 
@@ -56,6 +56,7 @@ model['conv5_4'] = tf.nn.relu(conv2d(model['conv5_3'], 34))
 model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
 # print model
 
+MEAN_VALUES = np.array([123.68, 116.779, 103.939]).reshape((1,1,1,3))
 # Read content and style images
 content_image = scipy.misc.imread("images/2/content_1.jpeg")
 content_image = np.array([misc.imresize(content_image, (300, 400))])
@@ -141,7 +142,7 @@ for layer in layers[:-1]:
 alpha = 100
 beta = 5
 J_total = alpha*J_content + beta*J_style
-
+																																																												
 # Train - Reduce cost and update Generated image.
 learning_rate = 0.001
 optimizer = tf.train.AdamOptimizer(learning_rate)
@@ -151,8 +152,8 @@ sess.run(init)
 # sess.run(model['input_image'].assign(generated_image))
 # imshow(generated_image[0])
 print model['input_image']
-image = generated_image + MEAN_VALUES
-imsave('../output_images_2/output_'+str(0)+'.png', image[0])
+image = sess.run(model['input_image']) + MEAN_VALUES
+imsave('../output_3/output_'+str(0)+'.png', image = np.clip(image[0], 0, 255))
 training_epochs = 3000
 for epoch in range(training_epochs):
 	# _, c = sess.run([optimizer, J_total])
@@ -160,4 +161,4 @@ for epoch in range(training_epochs):
 	sess.run(train_step)
 	print("Epoch:", '%04d' % (epoch), "cost=", (sess.run(J_total)))
 	image = sess.run(model['input_image']) + MEAN_VALUES
-	imsave('../output_images_2/1_output_'+str(epoch)+'.png', image[0])
+	imsave('../output_3/1_output_'+str(epoch)+'.png', np.clip(image[0], 0, 255))
