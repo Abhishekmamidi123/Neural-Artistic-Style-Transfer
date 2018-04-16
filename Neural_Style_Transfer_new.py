@@ -9,7 +9,7 @@ from scipy.misc import imsave
 import warnings
 warnings.filterwarnings('ignore') # Ignores warnings.
 
-path_vgg19_weights = '../pretrained_models/imagenet-vgg-verydeep-19.mat'
+path_vgg19_weights = '../imagenet-vgg-verydeep-19.mat'
 vgg_model = sio.loadmat(path_vgg19_weights)
 vgg_layers = vgg_model['layers']
 
@@ -58,14 +58,14 @@ model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides 
 
 MEAN_VALUES = np.array([123.68, 116.779, 103.939]).reshape((1,1,1,3))
 # Read content and style images
-content_image = scipy.misc.imread("images/2/content_1.jpeg")
+content_image = scipy.misc.imread("images/2/content_1.jpg")
 content_image = np.array([misc.imresize(content_image, (300, 400))])
 content_image = content_image - MEAN_VALUES
 # imshow(content_image[0])
 print "Content Image:"
 # plt.show()
 
-style_image = scipy.misc.imread("images/2/style_1.jpeg")
+style_image = scipy.misc.imread("images/2/style_1.jpg")
 style_image = np.array([misc.imresize(style_image, (300, 400))])
 style_image = style_image - MEAN_VALUES
 # imshow(style_image[0])
@@ -73,7 +73,6 @@ print "Style Image:"
 # plt.show()
 
 # Generate a noisy random image - Generated image
-MEAN_VALUES = np.array([123.68, 116.779, 103.939]).reshape((1,1,1,3))
 noise_image = np.random.uniform(-20, 20, size=(1, image_height, image_width, channels))
 generated_image = noise_image * 0.6 + content_image * (1 - 0.6)
 # imshow(generated_image[0])
@@ -86,6 +85,16 @@ sess = tf.Session()
 sess.run(model['input_image'].assign(content_image))
 content_activation = sess.run(model['conv4_2'])
 
+# Content cost
+shape = content_activation.shape
+height = shape[1]
+width = shape[2]
+channels = shape[3]
+M = height*width
+N = channels
+J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, model['conv4_2'])))
+J_content = J_content/(4.0 * N * M)
+
 # Style image
 sess.run(model['input_image'].assign(style_image))
 layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1', 'conv4_2']
@@ -93,17 +102,6 @@ weights = [0.5, 1.0, 1.5, 3.0, 4.0]
 style_activations = []
 for layer in layers:
 	style_activations.append(sess.run(model[layer]))
-
-# Generated image
-sess.run(model['input_image'].assign(generated_image))
-layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1', 'conv4_2']
-generated_activations = []
-for layer in layers:
-	generated_activations.append(model[layer])
-
-# Content cost
-J_content = tf.reduce_sum(tf.square(tf.subtract(content_activation, generated_activations[-1])))
-J_content = J_content/2.0
 
 # Style cost
 J_style = 0
@@ -122,7 +120,7 @@ for layer in layers[:-1]:
 	style_gram_matrix = tf.matmul(tf.transpose(style_activation), style_activation)
 	
 	# Activations of generated image
-	generated_activation = generated_activations[count]
+	generated_activation = model[layers[count]]
 	
 	# Reshape generated_activations
 	generated_activation = tf.reshape(generated_activation, [height*width, channels])
@@ -142,7 +140,7 @@ for layer in layers[:-1]:
 alpha = 100
 beta = 5
 J_total = alpha*J_content + beta*J_style
-																																																												
+																																																										
 # Train - Reduce cost and update Generated image.
 learning_rate = 0.001
 optimizer = tf.train.AdamOptimizer(learning_rate)
@@ -152,13 +150,20 @@ sess.run(init)
 # sess.run(model['input_image'].assign(generated_image))
 # imshow(generated_image[0])
 print model['input_image']
-image = sess.run(model['input_image']) + MEAN_VALUES
+image = sess.run(model['input_image'].assign(generated_image))
 imsave('../output_3/output_'+str(0)+'.png', image = np.clip(image[0], 0, 255))
 training_epochs = 3000
 for epoch in range(training_epochs):
-	# _, c = sess.run([optimizer, J_total])
-	# if (epoch) % 10 == 0:
 	sess.run(train_step)
 	print("Epoch:", '%04d' % (epoch), "cost=", (sess.run(J_total)))
-	image = sess.run(model['input_image']) + MEAN_VALUES
+	image = sess.run(model['input_image'])
 	imsave('../output_3/1_output_'+str(epoch)+'.png', np.clip(image[0], 0, 255))
+
+# Generated image
+# sess.run(model['input_image'].assign(generated_image))
+# layers = ['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1', 'conv4_2']
+# generated_activations = []
+# for layer in layers:
+# generated_activations.append(model[layer])
+# _, c = sess.run([optimizer, J_total])
+# if (epoch) % 10 == 0:
