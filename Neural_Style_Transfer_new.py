@@ -57,22 +57,22 @@ model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides 
 # print model
 
 # Read content and style images
-content_image = scipy.misc.imread("images/content.jpg")
+content_image = scipy.misc.imread("images/2/content_1.jpeg")
 content_image = np.array([misc.imresize(content_image, (300, 400))])
-imshow(content_image[0])
+# imshow(content_image[0])
 print "Content Image:"
 # plt.show()
 
-style_image = scipy.misc.imread("images/style.jpg")
+style_image = scipy.misc.imread("images/2/style_1.jpeg")
 style_image = np.array([misc.imresize(style_image, (300, 400))])
-imshow(style_image[0])
+# imshow(style_image[0])
 print "Style Image:"
 # plt.show()
 
 # Generate a noisy random image - Generated image
 noise_image = np.random.uniform(-20, 20, size=(1, image_height, image_width, channels))
 generated_image = noise_image * 0.6 + content_image * (1 - 0.6)
-imshow(generated_image[0])
+# imshow(generated_image[0])
 print "Noise Image:"
 # plt.show()
 
@@ -133,22 +133,24 @@ for layer in layers[:-1]:
 	count = count + 1
 
 # J_total
-alpha = 0.1
-beta = 100
+alpha = 100
+beta = 5
 J_total = alpha*J_content + beta*J_style
 
 # Train - Reduce cost and update Generated image.
-learning_rate = 0.01
-optimizer = tf.train.AdamOptimizer(learning_rate).minimize(J_total)
+learning_rate = 0.001
+optimizer = tf.train.AdamOptimizer(learning_rate)
+train_step = optimizer.minimize(J_total)
 init = tf.global_variables_initializer()
 sess.run(init)
-imshow(generated_image[0])
+sess.run(model['input_image'].assign(generated_image))
+# imshow(generated_image[0])
 print model['input_image']
-imsave('output_images/output_'+str(0)+'.png', generated_image[0])
+imsave('../output_images/output_'+str(0)+'.png', generated_image[0])
 training_epochs = 500
 for epoch in range(training_epochs):
-	_, c = sess.run([optimizer, J_total])
+	# _, c = sess.run([optimizer, J_total])
 	# if (epoch) % 10 == 0:
+	sess.run(train_step)
 	print("Epoch:", '%04d' % (epoch), "cost=", "{:.9f}".format(c))
-	# imsave('output_images/output_'+str(epoch)+'.png', generated_image[0])
-	imsave('output_images_1/1_output_'+str(epoch)+'.png', sess.run(model['input_image'])[0])
+	imsave('../output_images/1_output_'+str(epoch)+'.png', sess.run(model['input_image'])[0])
