@@ -9,7 +9,7 @@ from scipy.misc import imsave
 import warnings
 warnings.filterwarnings('ignore') # Ignores warnings.
 
-path_vgg19_weights = '../pretrained_models/imagenet-vgg-verydeep-19.mat'
+path_vgg19_weights = '../imagenet-vgg-verydeep-19.mat'
 vgg_model = sio.loadmat(path_vgg19_weights)
 vgg_layers = vgg_model['layers']
 
@@ -59,17 +59,20 @@ model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides 
 # Read content and style images
 content_image = scipy.misc.imread("images/2/content_1.jpeg")
 content_image = np.array([misc.imresize(content_image, (300, 400))])
+content_image = content_image - MEAN_VALUES
 # imshow(content_image[0])
 print "Content Image:"
 # plt.show()
 
 style_image = scipy.misc.imread("images/2/style_1.jpeg")
 style_image = np.array([misc.imresize(style_image, (300, 400))])
+style_image = style_image - MEAN_VALUES
 # imshow(style_image[0])
 print "Style Image:"
 # plt.show()
 
 # Generate a noisy random image - Generated image
+MEAN_VALUES = np.array([123.68, 116.779, 103.939]).reshape((1,1,1,3))
 noise_image = np.random.uniform(-20, 20, size=(1, image_height, image_width, channels))
 generated_image = noise_image * 0.6 + content_image * (1 - 0.6)
 # imshow(generated_image[0])
@@ -148,11 +151,13 @@ sess.run(init)
 # sess.run(model['input_image'].assign(generated_image))
 # imshow(generated_image[0])
 print model['input_image']
-imsave('../output_images/output_'+str(0)+'.png', generated_image[0])
-training_epochs = 500
+image = generated_image + MEAN_VALUES
+imsave('../output_images_2/output_'+str(0)+'.png', image[0])
+training_epochs = 3000
 for epoch in range(training_epochs):
 	# _, c = sess.run([optimizer, J_total])
 	# if (epoch) % 10 == 0:
 	sess.run(train_step)
 	print("Epoch:", '%04d' % (epoch), "cost=", (sess.run(J_total)))
-	imsave('../output_images/1_output_'+str(epoch)+'.png', sess.run(model['input_image'])[0])
+	image = sess.run(model['input_image']) + MEAN_VALUES
+	imsave('../output_images_2/1_output_'+str(epoch)+'.png', image[0])
