@@ -58,14 +58,14 @@ model['avgpool5'] = tf.nn.avg_pool(model['conv5_4'], ksize = [1,2,2,1], strides 
 
 MEAN_VALUES = np.array([123.68, 116.779, 103.939]).reshape((1,1,1,3))
 # Read content and style images
-content_image = scipy.misc.imread("images/2/content_1.jpg")
+content_image = scipy.misc.imread("images/1/content.jpg")
 content_image = np.array([misc.imresize(content_image, (300, 400))])
 content_image = content_image - MEAN_VALUES
 # imshow(content_image[0])
 print "Content Image:"
 # plt.show()
 
-style_image = scipy.misc.imread("images/2/style_1.jpg")
+style_image = scipy.misc.imread("images/1/style.jpg")
 style_image = np.array([misc.imresize(style_image, (300, 400))])
 style_image = style_image - MEAN_VALUES
 # imshow(style_image[0])
@@ -79,8 +79,8 @@ generated_image = noise_image * 0.6 + content_image * (1 - 0.6)
 print "Noise Image:"
 # plt.show()
 
-sess = tf.Session()
-
+sess = tf.InteractiveSession()
+sess.run(tf.initialize_all_variables())
 # Content image
 sess.run(model['input_image'].assign(content_image))
 content_activation = sess.run(model['conv4_2'])
@@ -140,24 +140,25 @@ for layer in layers[:-1]:
 alpha = 100
 beta = 5
 J_total = alpha*J_content + beta*J_style
-																																																										
+
 # Train - Reduce cost and update Generated image.
-learning_rate = 0.001
+learning_rate = 0.1
 optimizer = tf.train.AdamOptimizer(learning_rate)
 train_step = optimizer.minimize(J_total)
-init = tf.global_variables_initializer()
+
+init = tf.initialize_all_variables()
 sess.run(init)
-# sess.run(model['input_image'].assign(generated_image))
-# imshow(generated_image[0])
 print model['input_image']
+
 image = sess.run(model['input_image'].assign(generated_image))
-imsave('../output_3/output_'+str(0)+'.png', image = np.clip(image[0], 0, 255))
+sess.run(model['input_image'].assign(generated_image))
+imsave('../output_4/output_'+str(0)+'.png', np.clip(image[0], 0, 255))
 training_epochs = 3000
 for epoch in range(training_epochs):
 	sess.run(train_step)
 	print("Epoch:", '%04d' % (epoch), "cost=", (sess.run(J_total)))
 	image = sess.run(model['input_image'])
-	imsave('../output_3/1_output_'+str(epoch)+'.png', np.clip(image[0], 0, 255))
+	imsave('../output_4/1_output_'+str(epoch)+'.png', np.clip(image[0], 0, 255))
 
 # Generated image
 # sess.run(model['input_image'].assign(generated_image))
