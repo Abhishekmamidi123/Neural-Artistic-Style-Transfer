@@ -15,5 +15,5 @@
 - Python.
 
 ### Developers:
-- M Ratna Abhishek([GitHub](github.com/Abhishekmamidi123), [LinkedIn](https://www.linkedin.com/in/abhishekmamidi/), [Kaggle](https://www.kaggle.com/abhishekmamidi))
-- K Vagdevi([GitHub](github.com/vagdevik), [LinkedIn](https://www.linkedin.com/in/vagdevi-kommineni-427599114/), [Kaggle](https://www.kaggle.com/vgadevik))
+- M Ratna Abhishek([GitHub](https://github.com/Abhishekmamidi123), [LinkedIn](https://www.linkedin.com/in/abhishekmamidi/), [Kaggle](https://www.kaggle.com/abhishekmamidi))
+- K Vagdevi([GitHub](https://github.com/vagdevik), [LinkedIn](https://www.linkedin.com/in/vagdevi-kommineni-427599114/), [Kaggle](https://www.kaggle.com/vgadevik))
